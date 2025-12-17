@@ -1,16 +1,11 @@
-import express, { Request, Response } from "express";
+import "dotenv/config"; 
+import express from "express";
+import userRoutes from "./routes/user";
 
 const app = express();
-const PORT = 3000;
 
-app.get("/health", (req: Request, res: Response) => {
-  res.status(200).json({
-    status: "OK",
-    message: "Server is healthy 🚀"
-  });
-});
+app.use(express.json());
+app.use("/users", userRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server running`);
-});
- 
+app.listen(3000, () =>
+     console.log("Server running"));

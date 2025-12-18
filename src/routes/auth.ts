@@ -120,12 +120,6 @@ router.get(
   }
 );
 
-
-
-
-
-
-//  ------------------- PASSWORD RESET REQUEST -------------------
 router.post("/reset.password/request", async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required" });
@@ -135,7 +129,7 @@ router.post("/reset.password/request", async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const resetToken = uuidv4();
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); 
 
     await prisma.user.update({ where: { user_id: user.user_id }, data: { resetToken, tokenExpiry } });
 
@@ -148,7 +142,6 @@ router.post("/reset.password/request", async (req: Request, res: Response) => {
   }
 });
 
-// ------------------- PASSWORD RESET CONFIRM -------------------
 router.post("/reset.password/:token", validatePassword, async (req: Request, res: Response) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -172,4 +165,5 @@ router.post("/reset.password/:token", validatePassword, async (req: Request, res
   }
 });
 
-export default router;
+ export default router;
+ 

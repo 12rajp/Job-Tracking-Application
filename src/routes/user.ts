@@ -86,7 +86,7 @@ router.get(
         },
       });
 
-      return res.send("✅ Email verified successfully!");
+      return res.send("Email verified successfully!");
     } catch (error) {
       return res.status(500).json({
         message: "Internal server error",

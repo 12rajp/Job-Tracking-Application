@@ -14,7 +14,7 @@ export const initMailer = async () => {
     },
   });
 
-  console.log("Ethereal User:", testAccount.user);
+  console.log("Email User:", testAccount.user);
 };
 
 export const sendVerificationEmail = async (email: string, token: string) => {

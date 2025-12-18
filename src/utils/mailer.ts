@@ -2,27 +2,28 @@ import nodemailer from "nodemailer";
 
 let transporter: nodemailer.Transporter;
 
-export const initMailer = async () => {
-  const testAccount = await nodemailer.createTestAccount();
-
+export const initMailer = () => {
   transporter = nodemailer.createTransport({
-    host: "smtp.ethereal.email",
+    host: "smtp.gmail.com",
     port: 587,
+    secure: false,
     auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
     },
   });
 
-  console.log("Email User:", testAccount.user);
+  console.log("Mailer initialized with GMAIL account:", process.env.GMAIL_USER);
 };
 
-export const sendVerificationEmail = async (email: string, token: string) => {
+export const sendVerificationEmail = async (toEmail: string, token: string) => {
+  if (!transporter) throw new Error("Mailer not initialized");
+
   const url = `http://localhost:3000/users/verify/${token}`;
 
-  const info = await transporter.sendMail({
-    from: '"Verify Account" <no-reply@test.com>',
-    to: email,
+  await transporter.sendMail({
+    from: `"Verify Account" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
     subject: "Verify your email",
     html: `
       <h3>Email Verification</h3>
@@ -31,5 +32,5 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     `,
   });
 
-  console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+  console.log("Verification email sent to:", toEmail);
 };

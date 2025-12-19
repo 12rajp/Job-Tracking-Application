@@ -1,3 +1,5 @@
+import { Gender } from "@prisma/client";
+
 export interface UpdateUserData {
   user_name?: string;
   email?: string;
@@ -7,5 +9,5 @@ export interface UpdateUserData {
   city?: string;
   country?: string;
   date_of_birth?: Date;
-  gender?: string;
+  gender?: Gender | { set: Gender } | null;
 }

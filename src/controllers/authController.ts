@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient/prismaClient";
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
-import { sendVerificationEmail } from "../utils/mailer";
-import { RegisterBody } from "../interfaces/auth.interface";
-import { VerifyParams } from "../interfaces/auth.interface";
 import jwt from "jsonwebtoken";
-import { LoginBody } from "../interfaces/auth.interface";
-import { AuthRequest } from "../interfaces/authRequest.interface";
+import { RegisterBody, LoginBody, VerifyParams } from "../interfaces/auth.interface";
+import { sendVerificationEmail } from "../utils/mailer";
+ const JWT_SECRET = process.env.JWT_SECRET;
+ const EMAIL_JWT_SECRET = process.env.EMAIL_JWT_SECRET;
+
+if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
+if (!EMAIL_JWT_SECRET) throw new Error("EMAIL_JWT_SECRET is not defined in .env");
+
 
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,
@@ -16,275 +18,118 @@ export const registerUser = async (
   const { user_name, email, password } = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verifyToken = uuidv4();
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
 
-    await sendVerificationEmail(email, verifyToken);
+    const emailToken = jwt.sign({ email }, 
+    EMAIL_JWT_SECRET, { expiresIn: "1h" });
+
+    await sendVerificationEmail(email, emailToken);
 
     await prisma.user.create({
       data: {
         user_name,
         email,
         password: hashedPassword,
-        verifyToken,
-        tokenExpiry,
+        verifiedAt: null, 
       },
     });
 
-    return res.status(201).json({
-      message: "Registered successfully. Please verify your email.",
-    });
+    return res.status(201).json({ message: "Registered successfully. Please verify your email." });
   } catch (error) {
-    console.error(error);
+    console.error("REGISTER ERROR:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const verifyEmail = async (
-  req: Request<VerifyParams>,
-  res: Response
-) => {
+export const verifyEmail = async (req: Request<VerifyParams>, res: Response) => {
   const { token } = req.params;
 
   try {
-    const user = await prisma.user.findFirst({
-      where: { verifyToken: token },
-    });
+    const decoded = jwt.verify(token, EMAIL_JWT_SECRET) as { email: string };
+    const user = await prisma.user.findUnique({ where: { email: decoded.email } });
 
-    if (!user) {
-      return res.status(400).send("Invalid token");
-    }
-
-    if (user.tokenExpiry && user.tokenExpiry < new Date()) {
-      return res.status(400).send("Token expired");
-    }
+    if (!user) return res.status(400).send("User not found");
+    if (user.verifiedAt) return res.send("Email already verified!");
 
     await prisma.user.update({
       where: { user_id: user.user_id },
-      data: {
-        isVerified: true,
-        verifyToken: null,
-        tokenExpiry: null,
-      },
+      data: { verifiedAt: new Date() },
     });
 
     return res.send("Email verified successfully!");
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("VERIFY EMAIL ERROR:", error);
+    return res.status(400).send("Invalid or expired token");
   }
 };
 
-
-
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
-export const loginUser = async (
-  req: Request<{}, {}, LoginBody>,
-  res: Response
-) => {
+export const loginUser = async (req: Request<{}, {}, LoginBody>, res: Response) => {
   const { email, user_name, password } = req.body;
 
   try {
     const identifier = email || user_name;
-
-    if (!identifier) {
-      return res
-        .status(400)
-        .json({ error: "Email or username required" });
-    }
+    if (!identifier) return res.status(400).json({ error: "Email or username required" });
 
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: identifier },
-          { user_name: identifier },
-        ],
-      },
+      where: { OR: [{ email: identifier }, { user_name: identifier }] },
     });
-
-    if (!user) {
-      return res.status(400).json({ error: "User not found" });
-    }
+    if (!user) return res.status(400).json({ error: "User not found" });
 
     const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(400).json({ error: "Invalid password" });
-    }
+    if (!isValidPassword) return res.status(400).json({ error: "Invalid password" });
 
-    const token = jwt.sign(
-      { user_id: user.user_id },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    if (!user.verifiedAt) return res.status(403).json({ message: "Please verify your email before login." });
 
-    return res.json({
-      message: "Login successful",
-      token,
-    });
+    const token = jwt.sign({ user_id: user.user_id }, JWT_SECRET, { expiresIn: "1d" });
+
+    return res.json({ message: "Login successful", token });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("LOGIN ERROR:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const requestPasswordReset = async (
-  req: Request,
-  res: Response
-) => {
+export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({
-      message: "Email is required",
-    });
-  }
+  if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-
-    const resetToken = uuidv4();
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
-
-    await prisma.user.update({
-      where: { user_id: user.user_id },
-      data: {
-        resetToken,
-        tokenExpiry,
-      },
-    });
+    const resetToken = jwt.sign({ email }, EMAIL_JWT_SECRET, { expiresIn: "1h" });
 
     await sendVerificationEmail(email, resetToken, "passwordReset");
 
-    return res.json({
-      message: "Password reset link sent to email",
-    });
+    return res.json({ message: "Password reset link sent to email" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("REQUEST RESET ERROR:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const resetPassword = async (
-  req: Request<{ token: string }>,
-  res: Response
-) => {
+export const resetPassword = async (req: Request<{ token: string }>, res: Response) => {
   const { token } = req.params;
   const { password } = req.body;
 
   try {
-    const user = await prisma.user.findFirst({
-      where: { resetToken: token },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid token",
-      });
-    }
-
-    if (!user.tokenExpiry || user.tokenExpiry < new Date()) {
-      return res.status(400).json({
-        message: "Token expired",
-      });
-    }
+    const decoded = jwt.verify(token, EMAIL_JWT_SECRET) as { email: string };
+    const user = await prisma.user.findUnique({ where: { email: decoded.email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     await prisma.user.update({
       where: { user_id: user.user_id },
-      data: {
-        password: hashedPassword,
-        resetToken: null,
-        tokenExpiry: null,
-      },
+      data: { password: hashedPassword },
     });
 
-    return res.json({
-      message: "Password reset successful",
-    });
+    return res.json({ message: "Password reset successful" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("RESET PASSWORD ERROR:", error);
+    return res.status(400).json({ message: "Invalid or expired token" });
   }
 };
 
-export const updatePassword = async (
-  req: AuthRequest,
-  res: Response
-) => {
-  const { oldPassword, password } = req.body;
-  const userId = req.userId;
-
-  if (!oldPassword) {
-    return res.status(400).json({
-      message: "Old password is required",
-    });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { user_id: userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-
-    const isCorrect = await bcrypt.compare(
-      oldPassword,
-      user.password
-    );
-
-    if (!isCorrect) {
-      return res.status(400).json({
-        message: "Old password is incorrect",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await prisma.user.update({
-      where: { user_id: user.user_id },
-      data: {
-        password: hashedPassword,
-      },
-    });
-
-    return res.json({
-      message: "Password updated successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-};

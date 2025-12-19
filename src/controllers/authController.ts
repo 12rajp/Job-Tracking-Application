@@ -7,6 +7,7 @@ import { RegisterBody } from "../interfaces/auth.interface";
 import { VerifyParams } from "../interfaces/auth.interface";
 import jwt from "jsonwebtoken";
 import { LoginBody } from "../interfaces/auth.interface";
+import { AuthRequest } from "../interfaces/authRequest.interface";
 
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,
@@ -224,6 +225,61 @@ export const resetPassword = async (
 
     return res.json({
       message: "Password reset successful",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const updatePassword = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  const { oldPassword, password } = req.body;
+  const userId = req.userId;
+
+  if (!oldPassword) {
+    return res.status(400).json({
+      message: "Old password is required",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const isCorrect = await bcrypt.compare(
+      oldPassword,
+      user.password
+    );
+
+    if (!isCorrect) {
+      return res.status(400).json({
+        message: "Old password is incorrect",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { user_id: user.user_id },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return res.json({
+      message: "Password updated successfully",
     });
   } catch (error) {
     console.error(error);

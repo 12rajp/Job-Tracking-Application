@@ -16,9 +16,9 @@ export const authMiddleware = (
   }
 
   const token = authHeader.split(" ")[1];
-
+  
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as { user_id: number };
     req.userId = decoded.user_id;
     next();
   } catch {

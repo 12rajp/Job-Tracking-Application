@@ -6,9 +6,7 @@ import { updatePassword } from "../controllers/userController";
 
 const router = express.Router();
 
-// router.get(/users/pagenation ho ar all users show ho)
-// router.put("/update", authMiddleware, updateUser);
 router.put("/update/:id", authMiddleware, updateUser);
-router.delete("/delete", authMiddleware, deleteUser);
+router.delete("/delete/:id", authMiddleware, deleteUser);
 router.post("/update-password", authMiddleware, validatePassword, updatePassword);
 export default router;

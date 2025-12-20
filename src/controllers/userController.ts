@@ -5,42 +5,6 @@ import { UpdateUserData } from "../interfaces/updateUser.interface";
 import { Gender } from "@prisma/client"; 
 import bcrypt from "bcrypt";
 
-// export const updateUser = async (req: AuthRequest, res: Response) => {
-//   const userId = req.userId;
-//   if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
-//   const { user_name, email, full_name, phone, profile_photo, city, country, date_of_birth, gender } = req.body;
-
-//   const data: UpdateUserData = {};
-//   if (user_name) data.user_name = user_name;
-//   if (email) data.email = email;
-//   if (full_name) data.full_name = full_name;
-//   if (phone) data.phone = phone;
-//   if (profile_photo) data.profile_photo = profile_photo;
-//   if (city) data.city = city;
-//   if (country) data.country = country;
-//   if (date_of_birth) data.date_of_birth = new Date(date_of_birth);
-
-//   if (gender) {
-//     if (gender === "MALE" || gender === "FEMALE" || gender === "OTHER") {
-//       data.gender = { set: gender as Gender };
-//     } else {
-//       return res.status(400).json({ message: "Invalid gender value" });
-//     }
-//   }
-
-//   if (Object.keys(data).length === 0) return res.status(400).json({ message: "Empty body is not allowed" });
-
-//   try {
-//     const updatedUser = await prisma.user.update({ where: { user_id: userId }, data });
-//     return res.json({ message: "User updated successfully", user: updatedUser });
-//   } catch (error) {
-//     console.error("UPDATE ERROR", error);
-//     return res.status(500).json({ message: "Failed to update user" });
-//   }
-// };
-
-
 export const updateUser = async (req: AuthRequest, res: Response) => {
   const userId = Number(req.params.id);
 
@@ -48,7 +12,21 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     return res.status(400).json({ message: "Invalid user id" });
   }
 
-  const { user_name, email, full_name, phone, profile_photo, city, country, date_of_birth, gender } = req.body;
+  if (req.userId !== userId) {
+    return res.status(403).json({ message: "You not allowed to update this user" });
+  }
+
+  const {
+    user_name,
+    email,
+    full_name,
+    phone,
+    profile_photo,
+    city,
+    country,
+    date_of_birth,
+    gender,
+  } = req.body;
 
   const data: UpdateUserData = {};
 
@@ -89,9 +67,32 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
+
+// export const deleteUser = async (req: AuthRequest, res: Response) => {
+//   const userId = req.userId;
+//   if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+//   try {
+//     await prisma.user.delete({ where: { user_id: userId } });
+//     return res.json({ message: "User deleted successfully" });
+//   } catch (error) {
+//     console.error("DELETE ERROR", error);
+//     return res.status(500).json({ message: "Failed to delete user" });
+//   }
+// };
+
+
 export const deleteUser = async (req: AuthRequest, res: Response) => {
-  const userId = req.userId;
-  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  const userId = Number(req.params.id); 
+
+  if (!userId) {
+    return res.status(400).json({ message: "Invalid user id" });
+  }
+
+  if (req.userId !== userId) {
+    return res.status(403).json({ message: "You not allowed to delete this user" });
+  }
 
   try {
     await prisma.user.delete({ where: { user_id: userId } });
@@ -101,6 +102,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: "Failed to delete user" });
   }
 };
+
 
 
 export const updatePassword = async (req: AuthRequest, res: Response) => {

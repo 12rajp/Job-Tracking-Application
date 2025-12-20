@@ -6,7 +6,7 @@ import { updatePassword } from "../controllers/userController";
 
 const router = express.Router();
 
-router.get("/", authMiddleware, getAllUsers);
+router.get("/", getAllUsers);
 router.get("/:id", authMiddleware, getUserById);
 router.put("/update/:id", authMiddleware, updateUser);
 router.delete("/delete/:id", authMiddleware, deleteUser);

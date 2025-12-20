@@ -8,7 +8,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -21,18 +20,31 @@ enum Gender {
 }
 
 model User {
-  user_id       Int      @id @default(autoincrement())
-  user_name     String   @unique
+  user_id       Int       @id @default(autoincrement())
+  user_name     String    @unique
   password      String
-  email         String   @unique
+  email         String    @unique
   full_name     String?
   phone         String?
   profile_photo String?
   city          String?
   country       String?
   date_of_birth DateTime?
-  gender        Gender? 
-  verifiedAt    DateTime? 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  gender        Gender?
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  Skill         Skill[]
+}
+
+model Skill {
+  skill_id       Int     @id @default(autoincrement())
+  user_id        Int
+  skill_name     String
+  number_of_year Int?
+  category       String?
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
 }

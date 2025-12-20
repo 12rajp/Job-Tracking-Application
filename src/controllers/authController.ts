@@ -1,14 +1,3 @@
-// import { Request, Response } from "express";
-// import prisma from "../prismaClient/prismaClient";
-// import bcrypt from "bcrypt";
-// import jwt from "jsonwebtoken";
-// import { RegisterBody, LoginBody, VerifyParams } from "../interfaces/auth.interface";
-// import { sendVerificationEmail } from "../utils/mailer";
- 
-
-
-
-
 import { Request, Response } from "express";
 import prisma from "../prismaClient/prismaClient";
 import bcrypt from "bcrypt";
@@ -16,12 +5,6 @@ import jwt from "jsonwebtoken";
 import { RegisterBody, LoginBody, VerifyParams } from "../interfaces/auth.interface";
 import { sendVerificationEmail } from "../utils/mailer";
 import { JWT_SECRET, EMAIL_JWT_SECRET } from "../constants/const";
-// const JWT_SECRET = process.env.JWT_SECRET;
-// const EMAIL_JWT_SECRET = process.env.EMAIL_JWT_SECRET;
-
-// if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
-// if (!EMAIL_JWT_SECRET) throw new Error("EMAIL_JWT_SECRET is not defined in .env");
-
 
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,

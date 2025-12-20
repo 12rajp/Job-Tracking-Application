@@ -20,27 +20,6 @@ enum Gender {
   OTHER
 }
 
-// model User {
-//   user_id       Int      @id @default(autoincrement())
-//   user_name     String   @unique
-//   password      String
-//   email         String   @unique
-//   full_name     String?
-//   phone         String?
-//   profile_photo String?
-//   city          String?
-//   country       String?
-//   date_of_birth DateTime?
-//   gender        Gender? 
-//   verifiedAt     DateTime?
-//   verifyToken   String?
-//   resetToken   String? 
-//   tokenExpiry   DateTime?
-//   createdAt     DateTime @default(now())
-//   updatedAt     DateTime @default(now()) @updatedAt
-// }
-
-
 model User {
   user_id       Int      @id @default(autoincrement())
   user_name     String   @unique

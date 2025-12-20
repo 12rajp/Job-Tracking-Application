@@ -4,6 +4,50 @@ import { AuthRequest } from "../interfaces/authRequest.interface";
 import { UpdateUserData } from "../interfaces/updateUser.interface";
 import { Gender } from "@prisma/client"; 
 import bcrypt from "bcrypt";
+import { getPagination } from "../utils/pagination ";
+
+export const getAllUsers = async (req: AuthRequest, res: Response) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const { take, skip } = getPagination(page, limit);
+
+  try {
+    const users = await prisma.user.findMany({
+      take,
+      skip,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const total = await prisma.user.count();
+
+    return res.json({
+      data: users,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("GET USERS ERROR:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getUserById = async (req: AuthRequest, res: Response) => {
+  const userId = Number(req.params.id);
+  if (!userId) return res.status(400).json({ message: "Invalid user id" });
+
+  try {
+    const user = await prisma.user.findUnique({ where: { user_id: userId } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.json({ user });
+  } catch (error) {
+    console.error("GET USER BY ID ERROR:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
   const userId = Number(req.params.id);
@@ -67,22 +111,6 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
-
-// export const deleteUser = async (req: AuthRequest, res: Response) => {
-//   const userId = req.userId;
-//   if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
-//   try {
-//     await prisma.user.delete({ where: { user_id: userId } });
-//     return res.json({ message: "User deleted successfully" });
-//   } catch (error) {
-//     console.error("DELETE ERROR", error);
-//     return res.status(500).json({ message: "Failed to delete user" });
-//   }
-// };
-
-
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   const userId = Number(req.params.id); 
 
@@ -102,8 +130,6 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: "Failed to delete user" });
   }
 };
-
-
 
 export const updatePassword = async (req: AuthRequest, res: Response) => {
   const { oldPassword, password } = req.body;

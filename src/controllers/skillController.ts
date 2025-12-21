@@ -11,9 +11,12 @@ export const getAllSkills = async (req: AuthRequest, res: Response) => {
 
   try {
     const skills = await prisma.skill.findMany({
-      take,
+      take, 
       skip,
       orderBy: { skill_name: "asc" },
+        include: {
+        user: true,
+      },
     });
 
     const total = await prisma.skill.count();

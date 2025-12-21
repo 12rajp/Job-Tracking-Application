@@ -10,6 +10,8 @@ import statusRoutes from "./routes/status"
 import contactHRRoutes from "./routes/contactHR";
 import { initMailer } from "./utils/mailer";
 import reminderRoutes from "./routes/reminder";
+import documentRoutes from "./routes/document";
+import interviewRoutes from "./routes/interview";
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use("/companies", companyRoutes);
 app.use("/status", statusRoutes);
 app.use("/contact-hr", contactHRRoutes);
 app.use("/reminders", reminderRoutes);
+app.use("/document",documentRoutes);
+app.use("/interview",interviewRoutes);
 
 app.listen(3000, () =>
 console.log("Server running"));

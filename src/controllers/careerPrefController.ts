@@ -101,6 +101,9 @@ export const getAllCareerPref = async (req: AuthRequest, res: Response) => {
       take,
       skip,
       orderBy: { createdAt: "desc" },
+        include: {
+        user: true,
+      },
     });
 
     const total = await prisma.careerPreference.count();

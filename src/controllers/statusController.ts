@@ -28,6 +28,9 @@ export const getAllStatus = async (req: Request, res: Response) => {
       take,
       skip,
       orderBy: { status_name: "asc" },
+      include: {
+         jobApplications: true,
+      },
     });
 
     const total = await prisma.status.count();

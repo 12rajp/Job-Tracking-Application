@@ -131,7 +131,7 @@ model Company {
 
 model Status {
   status_id Int    @id @default(autoincrement())
-  status_name      String @unique
+  status_name      String 
 
   jobApplications JobApplication[]
 }
@@ -179,7 +179,7 @@ model Interview {
   interview_type  InterviewType
   interviewer     String?
   location        String?
-  duration        Int?     // minutes
+  duration        Int?     
   notes           String?
 
   createdAt       DateTime @default(now())
@@ -199,7 +199,8 @@ model Document {
   file_path    String
 
   createdAt    DateTime @default(now())
-
+  updatedAt       DateTime @default(now()) @updatedAt
+  
   user         User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   application  JobApplication @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
 

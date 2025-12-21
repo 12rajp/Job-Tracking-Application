@@ -20,9 +20,6 @@ export const addJobApplication = async (req: AuthRequest, res: Response) => {
     salary_offered,
   } = req.body;
 
-  // if (!company_id || !status_id || !position_title || !date_applied || !job_type) {
-  //   return res.status(400).json({ message: "Required fields are missing" });
-  // }
 const requiredFields = { company_id, status_id, position_title, date_applied, job_type };
 const missingFields = Object.entries(requiredFields)
   .filter(([_, value]) => value === undefined || value === null || value === "")

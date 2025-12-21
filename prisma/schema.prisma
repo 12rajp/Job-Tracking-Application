@@ -103,6 +103,7 @@ model Company {
   updatedAt    DateTime @default(now()) @updatedAt
 
   jobApplications JobApplication[]
+  contactHRs      Contact_HR[]
 }
 
 model Status {
@@ -110,4 +111,20 @@ model Status {
   status_name      String @unique
 
   jobApplications JobApplication[]
+}
+
+model Contact_HR {
+  contact_id   Int      @id @default(autoincrement())
+  company_id   Int
+  hr_name      String
+  email        String   @unique
+  phone        String?
+  position     String?
+  linked_in    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  company Company @relation(fields: [company_id], references: [company_id], onDelete: Cascade)
+
+  @@index([company_id])
 }

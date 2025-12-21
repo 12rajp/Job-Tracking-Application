@@ -20,22 +20,23 @@ enum Gender {
 }
 
 model User {
-  user_id       Int       @id @default(autoincrement())
-  user_name     String    @unique
-  password      String
-  email         String    @unique
-  full_name     String?
-  phone         String?
-  profile_photo String?
-  city          String?
-  country       String?
-  date_of_birth DateTime?
-  gender        Gender?
-  verifiedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  Skill         Skill[]
+  user_id          Int               @id @default(autoincrement())
+  user_name        String            @unique
+  password         String
+  email            String            @unique
+  full_name        String?
+  phone            String?
+  profile_photo    String?
+  city             String?
+  country          String?
+  date_of_birth    DateTime?
+  gender           Gender?
+  verifiedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  Skill            Skill[]
   careerPreference CareerPreference?
+  jobApplications  JobApplication[]
 }
 
 model Skill {
@@ -51,8 +52,8 @@ model Skill {
 }
 
 model CareerPreference {
-  pref_id       Int     @id @default(autoincrement())
-  user_id       Int     @unique
+  pref_id       Int      @id @default(autoincrement())
+  user_id       Int      @unique
   pref_industry String
   pref_role     String
   pref_location String?
@@ -62,5 +63,51 @@ model CareerPreference {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
-  user          User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model JobApplication {
+  app_id               Int       @id @default(autoincrement())
+  user_id              Int
+  company_id           Int
+  status_id            Int
+  position_title       String
+  job_description      String?
+  job_link             String?
+  location             String?
+  job_type             String
+  date_applied         DateTime
+  application_deadline DateTime?
+  salary_offered       Int?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @default(now()) @updatedAt
+
+  user    User    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  company Company @relation(fields: [company_id], references: [company_id])
+  status  Status  @relation(fields: [status_id], references: [status_id])
+
+  @@index([user_id])
+  @@index([company_id])
+  @@index([status_id])
+}
+
+model Company {
+  company_id   Int     @id @default(autoincrement())
+ company_name   String
+  industry     String?
+  company_size String?
+  location     String?
+  rating       Float?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  jobApplications JobApplication[]
+}
+
+model Status {
+  status_id Int    @id @default(autoincrement())
+  status_name      String @unique
+
+  jobApplications JobApplication[]
 }

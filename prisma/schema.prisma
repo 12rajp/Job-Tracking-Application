@@ -19,6 +19,24 @@ enum Gender {
   OTHER
 }
 
+enum NotificationMethod {
+  EMAIL
+  INAPP
+  BOTH
+}
+
+enum InterviewType {
+  ZOOM
+  FACE_TO_FACE
+}
+
+enum DocumentType {
+  RESUME
+  COVER_LETTER
+  OTHER
+}
+
+
 model User {
   user_id          Int               @id @default(autoincrement())
   user_name        String            @unique
@@ -34,9 +52,11 @@ model User {
   verifiedAt       DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
-  Skill            Skill[]
+  skill            Skill[]
   careerPreference CareerPreference?
   jobApplications  JobApplication[]
+  reminders Reminder[]
+  documents Document[]
 }
 
 model Skill {
@@ -86,6 +106,9 @@ model JobApplication {
   company Company @relation(fields: [company_id], references: [company_id])
   status  Status  @relation(fields: [status_id], references: [status_id])
 
+ reminders   Reminder[]
+  interviews  Interview[]
+  documents   Document[]
   @@index([user_id])
   @@index([company_id])
   @@index([status_id])
@@ -128,3 +151,59 @@ model Contact_HR {
 
   @@index([company_id])
 }
+
+model Reminder {
+  rem_id        Int      @id @default(autoincrement())
+  user_id       Int
+  app_id        Int
+  reminder_at   DateTime
+  message       String
+  is_sent       Boolean  @default(false)
+  method        NotificationMethod
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  user          User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  application   JobApplication @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([app_id])
+}
+
+model Interview {
+  inter_id        Int      @id @default(autoincrement())
+  app_id          Int
+  round_num       Int
+  interview_at    DateTime
+  interview_type  InterviewType
+  interviewer     String?
+  location        String?
+  duration        Int?     // minutes
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  application     JobApplication @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
+
+  @@index([app_id])
+}
+
+model Document {
+  doc_id       Int      @id @default(autoincrement())
+  user_id      Int
+  app_id       Int
+  doc_name     String
+  doc_type     DocumentType
+  file_path    String
+
+  createdAt    DateTime @default(now())
+
+  user         User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  application  JobApplication @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([app_id])
+}
+ 

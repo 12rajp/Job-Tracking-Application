@@ -14,21 +14,35 @@ export const registerUser = async (
 
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const emailToken = jwt.sign({ email }, EMAIL_JWT_SECRET, { expiresIn: "1h" });
- await sendEmailWithToken (email, emailToken);
-    await prisma.user.create({
-      data: {
-        user_name,
-        email,
-        password: hashedPassword,
-        verifiedAt: null, 
-      },
-    });
 
-    return res.status(201).json({ message: "Registered successfully. Please verify your email." });
+    let newUser;
+
+    try {
+      newUser = await prisma.user.create({
+        data: {
+          user_name,
+          email,
+          password: hashedPassword,
+          verifiedAt: null,
+        },
+      });
+
+      await sendEmailWithToken(email, emailToken);
+
+      return res.status(201).json({
+        message: "Registered successfully. Please verify your email.",
+      });
+    } catch (error) {
+      if (newUser?.user_id) {
+        await prisma.user.delete({ where: { user_id: newUser.user_id } });
+      }
+      throw error; 
+    }
   } catch (error) {
     console.error("REGISTER ERROR:", error);
     return res.status(500).json({ message: "Internal server error" });

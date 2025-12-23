@@ -23,21 +23,24 @@ export const sendEmailWithToken = async (
 ) => {
   if (!transporter) throw new Error("Mailer not initialized");
 
-  const url =
-    type === "verify"
-      ? `http://localhost:4000/users/verify/${token}`
-      : `http://localhost:4000/users/reset.password/${token}`;
+  const baseUrl = process.env.BASE_URL;
+
+  const path = type === "verify" ? `/users/verify/${token}` : `/users/reset.password/${token}`;
+  const url = `${baseUrl}${path}`;
+
+  const subject = type === "verify" ? "Verify your email" : "Reset your password";
+  const actionText = type === "verify" ? "Verify Email" : "Reset Password";
 
   await transporter.sendMail({
     from: `"MyApp" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: type === "verify" ? "Verify your email" : "Reset your password",
+    subject,
     html: `
-      <h3>${type === "verify" ? "Email Verification" : "Password Reset"}</h3>
+      <h3>${subject}</h3>
       <p>Click below to ${type === "verify" ? "verify your email" : "reset your password"}:</p>
-      <a href="${url}">${type === "verify" ? "Verify Email" : "Reset Password"}</a>
+      <a href="${url}">${actionText}</a>
     `,
   });
 
-  console.log(`${type === "verify" ? "Verification" : "Password reset"} email sent to:`, email);
+  console.log(`${subject} email sent to:`, email);
 };

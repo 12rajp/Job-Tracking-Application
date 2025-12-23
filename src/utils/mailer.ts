@@ -16,7 +16,7 @@ export const initMailer = () => {
   console.log("Mailer initialized with GMAIL account:", process.env.GMAIL_USER);
 };
 
-export const sendVerificationEmail = async (
+export const sendEmailWithToken = async (
   email: string,
   token: string,
   type: "verify" | "passwordReset" = "verify"
@@ -25,8 +25,8 @@ export const sendVerificationEmail = async (
 
   const url =
     type === "verify"
-      ? `http://localhost:3000/users/verify/${token}`
-      : `http://localhost:3000/users/reset.password/${token}`;
+      ? `http://localhost:4000/users/verify/${token}`
+      : `http://localhost:4000/users/reset.password/${token}`;
 
   await transporter.sendMail({
     from: `"MyApp" <${process.env.GMAIL_USER}>`,

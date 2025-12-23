@@ -3,7 +3,7 @@ import prisma from "../prismaClient/prismaClient";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { RegisterBody, LoginBody, VerifyParams } from "../interfaces/auth.interface";
-import { sendVerificationEmail } from "../utils/mailer";
+import { sendEmailWithToken } from "../utils/mailer";
 import { JWT_SECRET, EMAIL_JWT_SECRET } from "../constants/const";
 
 export const registerUser = async (
@@ -17,12 +17,8 @@ export const registerUser = async (
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const emailToken = jwt.sign({ email }, 
-    EMAIL_JWT_SECRET, { expiresIn: "1h" });
-
-    await sendVerificationEmail(email, emailToken);
-
+    const emailToken = jwt.sign({ email }, EMAIL_JWT_SECRET, { expiresIn: "1h" });
+ await sendEmailWithToken (email, emailToken);
     await prisma.user.create({
       data: {
         user_name,
@@ -97,7 +93,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 
     const resetToken = jwt.sign({ email }, EMAIL_JWT_SECRET, { expiresIn: "1h" });
 
-    await sendVerificationEmail(email, resetToken, "passwordReset");
+    await sendEmailWithToken(email, resetToken, "passwordReset");
 
     return res.json({ message: "Password reset link sent to email" });
   } catch (error) {

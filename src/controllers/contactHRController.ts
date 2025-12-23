@@ -52,7 +52,6 @@ export const addContactHR = async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    // ✅ Proper Prisma error handling (NO any)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         return res.status(409).json({
@@ -65,10 +64,6 @@ export const addContactHR = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: "Failed to add contact" });
   }
 };
-
-
-
-
 
 export const getContactHRById = async (req: AuthRequest, res: Response) => {
   const contactId = Number(req.params.id);

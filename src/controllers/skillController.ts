@@ -1,122 +1,131 @@
 import { Response } from "express";
 import prisma from "../prismaClient/prismaClient";
 import { AuthRequest } from "../interfaces/authRequest.interface";
-import { getPagination } from "../utils/pagination ";
-
-export const getAllSkills = async (req: AuthRequest, res: Response) => {
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 10;
-
-  const { take, skip } = getPagination(page, limit);
-
-  try {
-    const skills = await prisma.skill.findMany({
-      take, 
-      skip,
-      orderBy: { skill_name: "asc" },
-        include: {
-        user: true,
-      },
-    });
-
-    const total = await prisma.skill.count();
-
-    return res.json({
-      data: skills,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    });
-  } catch (error) {
-    console.error("GET ALL SKILLS ERROR:", error);
-    return res.status(500).json({ message: "Failed to fetch skills" });
-  }
-};
 
 export const addSkill = async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
-
-  if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
   const { skill_name, number_of_year, category } = req.body;
 
-  if (!skill_name) return res.status(400).json({ message: "Skill name is required" });
+  if (!userId || !skill_name) {
+    return res.status(400).json({ message: "Invalid data" });
+  }
 
   try {
-    const skill = await prisma.skill.create({
+    let skill = await prisma.skill.findUnique({
+      where: { skill_name },
+    });
+
+    if (!skill) {
+      skill = await prisma.skill.create({
+        data: { skill_name },
+      });
+    }
+
+    const userSkill = await prisma.userSkill.create({
       data: {
-        user_id: userId,      
-        skill_name,
+        user_id: userId,
+        skill_id: skill.skill_id,
         number_of_year,
         category,
       },
     });
 
-    return res.status(201).json({ message: "Skill added successfully", skill });
+    return res.status(201).json({
+      message: "Skill added successfully",
+      userSkill,
+    });
   } catch (error) {
-    console.error("ADD SKILL ERROR:", error);
+    if (error instanceof Error && (error as any).code === "P2002") {
+      return res.status(409).json({
+        message: "Skill already added for this user",
+      });
+    }
+
+    console.error(error);
     return res.status(500).json({ message: "Failed to add skill" });
   }
 };
-
 
 export const SkillsByUserId = async (req: AuthRequest, res: Response) => {
   const userId = Number(req.params.id);
 
   try {
-    const skills = await prisma.skill.findMany({
+    const skills = await prisma.userSkill.findMany({
       where: { user_id: userId },
-      orderBy: { skill_name: "asc" },
+      include: {
+        skill: true,
+      },
     });
 
     return res.json({ skills });
   } catch (error) {
-    console.error("GET SKILLS ERROR:", error);
     return res.status(500).json({ message: "Failed to fetch skills" });
   }
 };
-
-export const updateSkill = async (req: AuthRequest, res: Response) => {
-  const skillId = Number(req.params.id);
-  const { skill_name, number_of_year, category } = req.body;
-
-  if (!skillId) {
-    return res.status(400).json({ message: "Invalid skill id" });
-  }
-
+export const getAllSkills = async (req: AuthRequest, res: Response) => {
   try {
-    const skill = await prisma.skill.findUnique({ where: { skill_id: skillId } });
-    if (!skill) {
-      return res.status(404).json({ message: "Skill not found" });
-    }
-
-    if (skill.user_id !== req.userId) {
-      return res.status(403).json({ message: "You are not allowed to update this skill" });
-    }
-
-    const updatedSkill = await prisma.skill.update({
-      where: { skill_id: skillId },
-      data: { skill_name, number_of_year, category },
+    const skills = await prisma.skill.findMany({
+      include: {
+        userSkills: {
+          include: {
+            user: true,
+          },
+        },
+      },
+      orderBy: {
+        skill_name: "asc",
+      },
     });
 
-    return res.json({ message: "Skill updated successfully", skill: updatedSkill });
+    return res.json({ skills });
   } catch (error) {
-    console.error("UPDATE SKILL ERROR:", error);
-    return res.status(500).json({ message: "Failed to update skill" });
+    return res.status(500).json({ message: "Failed to fetch skills" });
+  }
+};
+export const deleteSkill = async (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+
+  try {
+    await prisma.userSkill.delete({
+      where: { id },
+    });
+
+    return res.json({ message: "Skill removed successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to delete skill" });
   }
 };
 
-export const deleteSkill = async (req: AuthRequest, res: Response) => {
-  const skillId = Number(req.params.id);
+export const updateSkillByUserId = async (req: AuthRequest, res: Response) => {
+  const userSkillId = Number(req.params.id);
+  const { number_of_year, category } = req.body;
 
   try {
-    await prisma.skill.delete({ where: { skill_id: skillId } });
-    return res.json({ message: "Skill deleted successfully" });
+    const userSkill = await prisma.userSkill.findUnique({
+      where: { id: userSkillId },
+    });
+
+    if (!userSkill) {
+      return res.status(404).json({ message: "User skill not found" });
+    }
+
+    if (userSkill.user_id !== req.userId) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    const updated = await prisma.userSkill.update({
+      where: { id: userSkillId },
+      data: {
+        number_of_year,
+        category,
+      },
+    });
+
+    return res.json({
+      message: "Skill updated successfully",
+      updated,
+    });
   } catch (error) {
-    console.error("DELETE SKILL ERROR:", error);
-    return res.status(500).json({ message: "Failed to delete skill" });
+    return res.status(500).json({ message: "Update failed" });
   }
 };

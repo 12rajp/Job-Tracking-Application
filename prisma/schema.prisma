@@ -198,21 +198,21 @@ model Interview {
   @@index([app_id])
 }
 
-model Document {
+ model Document {
   doc_id       Int      @id @default(autoincrement())
   user_id      Int
-  app_id       Int
+  app_id       Int?    
   doc_name     String
-  doc_type     DocumentType
+  doc_type     String   
   file_path    String
+  size         Int?     
 
   createdAt    DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
   
-  user         User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  application  JobApplication @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
+  user         User            @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  application  JobApplication? @relation(fields: [app_id], references: [app_id], onDelete: Cascade) 
 
   @@index([user_id])
   @@index([app_id])
 }
- 

@@ -125,9 +125,33 @@ export const updateJobApplication = async (req: AuthRequest, res: Response) => {
     if (application.user_id !== req.userId)
       return res.status(403).json({ message: "You are not allowed to update this application" });
 
+    const {
+      company_id,
+      status_id,
+      position_title,
+      job_description,
+      job_link,
+      location,
+      job_type,
+      date_applied,
+      application_deadline,
+      salary_offered,
+    } = req.body;
+
     const updated = await prisma.jobApplication.update({
       where: { app_id: appId },
-      data: req.body,
+      data: {
+        company_id: Number(company_id),
+        status_id: Number(status_id),
+        position_title,
+        job_description: job_description || null,
+        job_link: job_link || null,
+        location: location || null,
+        job_type: job_type || null,
+        date_applied: date_applied ? new Date(date_applied) : undefined,
+        application_deadline: application_deadline ? new Date(application_deadline) : null,
+        salary_offered: salary_offered ? Number(salary_offered) : null,
+      },
     });
 
     return res.json({

@@ -60,21 +60,37 @@ if (missingFields.length > 0) {
   }
 };
 
-export const getMyJobApplications = async (req: AuthRequest, res: Response) => {
+  export const getMyJobApplications = async (req: AuthRequest, res: Response) => {
   const requestedUserId = Number(req.params.id);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
 
   if (requestedUserId !== req.userId) {
     return res.status(403).json({ message: "You can only access your own applications" });
   }
 
+  const { take, skip } = getPagination(page, limit);
+
   try {
     const applications = await prisma.jobApplication.findMany({
       where: { user_id: req.userId },
-       include: { company: true },
+      include: { company: true },
       orderBy: { createdAt: "desc" },
+      take,
+      skip,
     });
 
-    return res.json({ data: applications });
+    const total = await prisma.jobApplication.count({
+      where: { user_id: req.userId },
+    });
+
+    return res.json({ 
+      data: applications,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("GET JOB APPLICATIONS ERROR:", error);
     return res.status(500).json({ message: "Failed to fetch job applications" });
@@ -189,14 +205,31 @@ export const deleteJobApplication = async (req: AuthRequest, res: Response) => {
 };
 
 export const getMyJobApplicationsByUser = async (req: AuthRequest, res: Response) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const { take, skip } = getPagination(page, limit);
+
   try {
     const applications = await prisma.jobApplication.findMany({
       where: { user_id: req.userId },
       include: { company: true },
       orderBy: { createdAt: "desc" },
+      take,
+      skip,
     });
 
-    return res.json({ data: applications });
+    const total = await prisma.jobApplication.count({
+      where: { user_id: req.userId },
+    });
+
+    return res.json({ 
+      data: applications,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("GET MY JOB APPLICATIONS ERROR:", error);
     return res.status(500).json({ message: "Failed to fetch your applications" });

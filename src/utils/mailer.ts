@@ -44,3 +44,24 @@ export const sendEmailWithToken = async (
 
   console.log(`${subject} email sent to:`, email);
 };
+
+export const sendReminderEmail = async (
+  to: string,
+  subject: string,
+  html: string
+) => {
+  if (!transporter) throw new Error("Mailer not initialized");
+
+  try {
+    await transporter.sendMail({
+      from: `"Job Tracker Reminder" <${process.env.GMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log(`Reminder email sent to ${to}`);
+  } catch (error) {
+    console.error("Reminder email sending error:", error);
+    throw error;
+  }
+};

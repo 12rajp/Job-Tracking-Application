@@ -6,7 +6,7 @@ import { getPagination } from "../utils/pagination ";
 export const getAllReminders = async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
   const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 10;
+  const limit = Number(req.query.limit) || 5;
   const { take, skip } = getPagination(page, limit);
 
   try {
@@ -15,14 +15,14 @@ export const getAllReminders = async (req: AuthRequest, res: Response) => {
       take,
       skip,
       orderBy: { reminder_at: "asc" },
-     include: {
-  application: {     
-    include: {
-      company: true,
-    },
-  },
-  user: true,
-}
+      include: {
+        application: {     
+          include: {
+            company: true,
+          },
+        },
+        user: true,
+      }
     });
 
     const total = await prisma.reminder.count({
@@ -52,12 +52,21 @@ export const addReminder = async (req: AuthRequest, res: Response) => {
     });
   }
 
+  const reminderTime = new Date(reminder_at);
+  const now = new Date();
+  
+  if (reminderTime <= now) {
+    return res.status(400).json({
+      message: "Reminder time must be in the future",
+    });
+  }
+
   try {
     const reminder = await prisma.reminder.create({
       data: {
         user_id: userId!,
         app_id: Number(app_id),
-        reminder_at: new Date(reminder_at),
+        reminder_at: reminderTime,
         message: message || "",
         method: "INAPP", 
       },
@@ -80,13 +89,13 @@ export const getReminderById = async (req: AuthRequest, res: Response) => {
     const reminder = await prisma.reminder.findUnique({
       where: { rem_id: reminderId },
       include: {
-  application: {
-    include: {
-      company: true,
-    },
-  },
-  user: true,
-}
+        application: {
+          include: {
+            company: true,
+          },
+        },
+        user: true,
+      }
     });
 
     if (!reminder) {
@@ -119,6 +128,17 @@ export const updateReminder = async (req: AuthRequest, res: Response) => {
 
     if (reminder.user_id !== req.userId) {
       return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    if (reminder_at) {
+      const newReminderTime = new Date(reminder_at);
+      const now = new Date();
+      
+      if (newReminderTime <= now) {
+        return res.status(400).json({
+          message: "Reminder time must be in the future",
+        });
+      }
     }
 
     const updatedReminder = await prisma.reminder.update({

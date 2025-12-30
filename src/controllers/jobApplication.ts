@@ -70,6 +70,7 @@ export const getMyJobApplications = async (req: AuthRequest, res: Response) => {
   try {
     const applications = await prisma.jobApplication.findMany({
       where: { user_id: req.userId },
+       include: { company: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -184,5 +185,20 @@ export const deleteJobApplication = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error("DELETE JOB APPLICATION ERROR:", error);
     return res.status(500).json({ message: "Failed to delete job application" });
+  }
+};
+
+export const getMyJobApplicationsByUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const applications = await prisma.jobApplication.findMany({
+      where: { user_id: req.userId },
+      include: { company: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ data: applications });
+  } catch (error) {
+    console.error("GET MY JOB APPLICATIONS ERROR:", error);
+    return res.status(500).json({ message: "Failed to fetch your applications" });
   }
 };

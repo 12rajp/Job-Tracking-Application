@@ -36,6 +36,7 @@ export const registerUser = async (
 
       return res.status(201).json({
         message: "Registered successfully. Please verify your email.",
+        email: email, 
       });
     } catch (error) {
       if (newUser?.user_id) {
@@ -137,4 +138,3 @@ export const resetPassword = async (req: Request<{ token: string }>, res: Respon
     return res.status(400).json({ message: "Invalid or expired token" });
   }
 };
-

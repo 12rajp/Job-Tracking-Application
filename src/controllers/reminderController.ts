@@ -15,10 +15,14 @@ export const getAllReminders = async (req: AuthRequest, res: Response) => {
       take,
       skip,
       orderBy: { reminder_at: "asc" },
-      include: {
-        application: true,
-        user: true,
-      },
+     include: {
+  application: {     
+    include: {
+      company: true,
+    },
+  },
+  user: true,
+}
     });
 
     const total = await prisma.reminder.count({
@@ -40,11 +44,11 @@ export const getAllReminders = async (req: AuthRequest, res: Response) => {
 
 export const addReminder = async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
-  const { app_id, reminder_at, message, method } = req.body;
+  const { app_id, reminder_at, message } = req.body;
 
-  if (!app_id || !reminder_at || !method) {
+  if (!app_id || !reminder_at) {
     return res.status(400).json({
-      message: "app_id, reminder_at, method are required",
+      message: "app_id and reminder_at are required",
     });
   }
 
@@ -52,10 +56,10 @@ export const addReminder = async (req: AuthRequest, res: Response) => {
     const reminder = await prisma.reminder.create({
       data: {
         user_id: userId!,
-        app_id,
+        app_id: Number(app_id),
         reminder_at: new Date(reminder_at),
-        message,
-        method,
+        message: message || "",
+        method: "INAPP", 
       },
     });
 
@@ -76,9 +80,13 @@ export const getReminderById = async (req: AuthRequest, res: Response) => {
     const reminder = await prisma.reminder.findUnique({
       where: { rem_id: reminderId },
       include: {
-        application: true,
-        user:true,
-       },
+  application: {
+    include: {
+      company: true,
+    },
+  },
+  user: true,
+}
     });
 
     if (!reminder) {

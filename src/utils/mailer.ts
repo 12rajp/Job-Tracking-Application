@@ -23,10 +23,12 @@ export const sendEmailWithToken = async (
 ) => {
   if (!transporter) throw new Error("Mailer not initialized");
 
-  const baseUrl = process.env.BASE_URL;
-
-  const path = type === "verify" ? `/users/verify/${token}` : `/users/reset.password/${token}`;
-  const url = `${baseUrl}${path}`;
+  const frontendUrl = process.env.FRONTEND_URL;
+  const path = type === "verify" 
+    ? `/verify/${token}`  
+    : `/reset-password/${token}`;  
+  
+  const url = `${frontendUrl}${path}`;
 
   const subject = type === "verify" ? "Verify your email" : "Reset your password";
   const actionText = type === "verify" ? "Verify Email" : "Reset Password";
@@ -38,7 +40,13 @@ export const sendEmailWithToken = async (
     html: `
       <h3>${subject}</h3>
       <p>Click below to ${type === "verify" ? "verify your email" : "reset your password"}:</p>
-      <a href="${url}">${actionText}</a>
+      <a href="${url}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+        ${actionText}
+      </a>
+      <p style="margin-top: 20px; color: #666; font-size: 12px;">
+        Or copy and paste this link: <br/>
+        <a href="${url}">${url}</a>
+      </p>
     `,
   });
 

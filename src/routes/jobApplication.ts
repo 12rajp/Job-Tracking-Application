@@ -1,13 +1,12 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth";
-import { addJobApplication,  getMyJobApplicationsByUser,getMyJobApplications,updateJobApplication,deleteJobApplication, getAllJobApplications,} from "../controllers/jobApplication";
+import {addJobApplication,getAllJobApplications,getJobApplicationById,updateJobApplication,deleteJobApplication,uploadApplicationFile,} from "../controllers/jobApplication";
 
 const router = express.Router();
 
-router.get("/my", authMiddleware, getMyJobApplicationsByUser);
-router.get("/:id", authMiddleware, getMyJobApplications);
-router.get("/", authMiddleware, getAllJobApplications); 
-router.post("/", authMiddleware, addJobApplication);
+router.post("/",authMiddleware,uploadApplicationFile.single("file"),addJobApplication);
+router.get("/:userId", authMiddleware, getAllJobApplications);
+router.get("/application/:id", authMiddleware, getJobApplicationById);
 router.put("/:id", authMiddleware, updateJobApplication);
 router.delete("/:id", authMiddleware, deleteJobApplication);
 
